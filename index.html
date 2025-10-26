@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEATMAP // AMSTERDAM</title>
+    
+    <!-- Pixel art favicon (yellow-orange-red gradient) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230a0a0a'/><rect x='4' y='2' width='8' height='12' fill='%23FFD700'/><rect x='5' y='4' width='6' height='8' fill='%23FF8C00'/><rect x='6' y='6' width='4' height='4' fill='%238B1A1A'/></svg>">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+    
+    <!-- ================================================================ -->
+    <!-- SIDE PANEL: Configuration & Building Details                     -->
+    <!-- ================================================================ -->
+    <div id="side-panel" class="side-panel">
+        <!-- Panel Header -->
+        <div class="panel-header">
+            <h2 id="panel-title">Configuration</h2>
+            <button id="back-to-heatmap" class="back-btn hidden">← Back</button>
+        </div>
+        
+        <!-- Heatmap Configuration View -->
+        <div id="heatmap-view" class="panel-content">
+            <div class="control-section">
+                <label class="control-label">
+                    Energy <span id="energy-weight-value">0.5</span>
+                </label>
+                <input type="range" id="energy-weight" min="0" max="1" step="0.05" value="0.5" class="slider">
+                <p class="help-text">Poor efficiency → higher priority</p>
+            </div>
+            
+            <div class="control-section">
+                <label class="control-label">
+                    Age <span id="year-weight-value">0.5</span>
+                </label>
+                <input type="range" id="year-weight" min="0" max="1" step="0.05" value="0.5" class="slider">
+                <p class="help-text">Older buildings → higher priority</p>
+            </div>
+            
+            <div class="control-section">
+                <label class="control-label">
+                    Busy Road <span id="busy-road-weight-value">0.00</span>
+                </label>
+                <input type="range" id="busy-road-weight" min="0" max="1" step="0.05" value="0" class="slider">
+                <p class="help-text">Busy roads → higher priority (binary)</p>
+            </div>
+            
+            <div class="weight-summary">
+                <strong>Total</strong> <span id="total-weight">1.00</span>
+                <span id="weight-warning" class="warning hidden">Must be ≤ 1.0</span>
+            </div>
+            
+            <button id="apply-heatmap" class="apply-btn">Apply</button>
+            
+            <div class="info-box">
+                <h4>Scoring</h4>
+                <p>Buildings scored by worst energy label, oldest year, and busy road location.</p>
+                <ul>
+                    <li>Yellow → Low priority</li>
+                    <li>Orange → Medium</li>
+                    <li>Red → High priority</li>
+                </ul>
+                <p style="margin-top: 8px; font-size: 10px;">Busy road is binary: enable and set weight to prioritize buildings on busy roads.</p>
+            </div>
+        </div>
+        
+        <!-- Building Details View -->
+        <div id="building-view" class="panel-content hidden">
+            <div id="building-content"></div>
+        </div>
+    </div>
+    
+    <!-- ================================================================ -->
+    <!-- LOADING SCREEN: Pixel Grid Animation                             -->
+    <!-- ================================================================ -->
+    <div id="loading" class="loading-screen">
+        <div class="loading-content">
+            <div class="grid-text"></div>
+        </div>
+    </div>
+    
+    <!-- ================================================================ -->
+    <!-- SCRIPTS                                                           -->
+    <!-- ================================================================ -->
+    <!-- Leaflet.js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Data Loader (for GitHub Pages) -->
+    <script src="data-loader.js"></script>
+    
+    <!-- Application -->
+    <script src="app.js"></script>
+</body>
+</html>
+
