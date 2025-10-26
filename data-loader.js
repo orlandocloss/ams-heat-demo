@@ -16,19 +16,23 @@ async function loadCSV(filename) {
 
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
-    const headers = lines[0].split(',');
+    const headers = parseCSVLine(lines[0]);
     
     const records = [];
     
     for (let i = 1; i < lines.length; i++) {
         const values = parseCSVLine(lines[i]);
-        if (values.length < headers.length) continue;
         
         const record = {};
         headers.forEach((header, index) => {
-            record[header] = values[index] || '';
+            record[header] = values[index] !== undefined ? values[index] : '';
         });
         records.push(record);
+    }
+    
+    console.log(`Parsed ${records.length} records`);
+    if (records.length > 0) {
+        console.log('Sample record:', records[0]);
     }
     
     return records;
@@ -45,15 +49,15 @@ function parseCSVLine(line) {
         if (char === '"') {
             inQuotes = !inQuotes;
         } else if (char === ',' && !inQuotes) {
-            result.push(current.trim());
+            result.push(current);
             current = '';
         } else {
             current += char;
         }
     }
     
-    result.push(current.trim());
-    return result;
+    result.push(current);
+    return result.map(v => v.trim());
 }
 
 function processBuildingsData(records) {
@@ -76,11 +80,13 @@ function processBuildingsData(records) {
             });
         }
         
+        const busyRoadValue = row.busy_roads ? row.busy_roads.trim() : '0';
+        
         buildingsMap.get(polygonKey).addresses.push({
             address: row.full_address,
             energyLabel: row.Energielabel,
             buildingYear: row.Energielabels_Bouwjaar,
-            busyRoad: parseInt(row.busy_roads) === 1,
+            busyRoad: busyRoadValue === '1' || busyRoadValue === 1,
             longitude: parseFloat(row.longitude),
             latitude: parseFloat(row.latitude)
         });
