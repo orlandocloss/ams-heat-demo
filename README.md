@@ -2,7 +2,7 @@
 
 Interactive building visualization with custom weighted heatmaps.
 
-## 🔥 Live Demo
+## Demo
 
 Visit: **https://orlandocloss.github.io/ams-heat-demo/**
 
@@ -13,7 +13,7 @@ Visit: **https://orlandocloss.github.io/ams-heat-demo/**
 - Pixel art retro interface
 - Click buildings for detailed information
 
-## Local Development
+## Local development
 
 ```bash
 npm install
@@ -22,7 +22,7 @@ npm start
 
 Open `http://localhost:3000`
 
-## How It Works
+## How it works
 
 Configure three weight factors (must total ≤ 1.0):
 - **Energy** - Poor efficiency → higher priority
