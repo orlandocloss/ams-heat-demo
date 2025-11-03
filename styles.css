@@ -370,29 +370,53 @@ body {
     color: #333;
 }
 
-.regional-btn {
-    width: 100%;
+.regional-toggle {
+    background: #1a1a1a;
+    border: 2px solid #2a2a2a;
     padding: 12px;
-    background: transparent;
-    color: #FFD700;
-    border: 2px solid #FFD700;
     border-radius: 0;
-    font-size: 12px;
-    font-weight: 400;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    letter-spacing: 2px;
-    text-transform: uppercase;
     margin-bottom: 10px;
 }
 
-.regional-btn:hover {
-    background: rgba(255, 215, 0, 0.1);
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+.toggle-label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
 }
 
-.regional-btn:active {
-    background: rgba(255, 215, 0, 0.2);
+.toggle-checkbox {
+    width: 16px;
+    height: 16px;
+    background: #2a2a2a;
+    border: 2px solid #FFD700;
+    cursor: pointer;
+    appearance: none;
+    border-radius: 0;
+}
+
+.toggle-checkbox:checked {
+    background: #FFD700;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+
+.toggle-checkbox:checked::after {
+    content: '✓';
+    display: block;
+    text-align: center;
+    color: #0a0a0a;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 12px;
+}
+
+.toggle-text {
+    color: #FFD700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 400;
 }
 
 .info-box {

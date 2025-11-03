@@ -87,6 +87,7 @@ function processBuildingsData(records) {
             energyLabel: row.Energielabel,
             buildingYear: row.Energielabels_Bouwjaar,
             busyRoad: busyRoadValue === '1' || busyRoadValue === 1,
+            neighborhood: row.neighborhood || 'Unknown',
             longitude: parseFloat(row.longitude),
             latitude: parseFloat(row.latitude)
         });

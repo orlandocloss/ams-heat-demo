@@ -98,8 +98,8 @@ function setupPanel() {
     elements.applyBtn.addEventListener('click', applyHeatmap);
     elements.backBtn.addEventListener('click', showHeatmapView);
     
-    // Regional heatmap button
-    document.getElementById('show-regional-heatmap').addEventListener('click', toggleRegionalHeatmap);
+    // Regional heatmap checkbox
+    document.getElementById('show-regional-heatmap').addEventListener('change', toggleRegionalHeatmap);
 }
 
 function showHeatmapView() {
@@ -480,20 +480,20 @@ function showBuildingInfo(building) {
 // REGIONAL HEATMAP
 // ============================================================================
 
-function toggleRegionalHeatmap() {
-    if (state.regionalHeatmapEnabled) {
+function toggleRegionalHeatmap(e) {
+    const checked = e.target.checked;
+    
+    if (checked) {
+        // Show regional heatmap
+        createRegionalHeatmap();
+        state.regionalHeatmapEnabled = true;
+    } else {
         // Remove regional heatmap
         if (state.regionalHeatmapLayer) {
             state.map.removeLayer(state.regionalHeatmapLayer);
             state.regionalHeatmapLayer = null;
         }
         state.regionalHeatmapEnabled = false;
-        document.getElementById('show-regional-heatmap').textContent = 'Show Regional Heatmap';
-    } else {
-        // Show regional heatmap
-        createRegionalHeatmap();
-        state.regionalHeatmapEnabled = true;
-        document.getElementById('show-regional-heatmap').textContent = 'Hide Regional Heatmap';
     }
 }
 
@@ -503,28 +503,27 @@ function createRegionalHeatmap() {
         return;
     }
     
-    // Group buildings by postal code and calculate average score
-    const postalCodeScores = new Map();
+    // Group buildings by neighborhood and calculate average score
+    const neighborhoodScores = new Map();
     
     state.buildingLayers.forEach(({ building }) => {
         if (!building.addresses || building.addresses.length === 0) return;
         
-        // Get postal code from first address
-        const postalCode = building.addresses[0].address.match(/\d{4}[A-Z]{2}/)?.[0];
-        if (!postalCode) return;
+        // Get neighborhood from first address
+        const neighborhood = building.addresses[0].neighborhood || 'Unknown';
         
         // Calculate this building's score
         const score = calculateBuildingScore(building);
         
-        if (!postalCodeScores.has(postalCode)) {
-            postalCodeScores.set(postalCode, {
+        if (!neighborhoodScores.has(neighborhood)) {
+            neighborhoodScores.set(neighborhood, {
                 scores: [],
                 locations: [],
                 count: 0
             });
         }
         
-        const data = postalCodeScores.get(postalCode);
+        const data = neighborhoodScores.get(neighborhood);
         data.scores.push(score);
         data.count++;
         
@@ -538,21 +537,23 @@ function createRegionalHeatmap() {
     // Calculate mean scores and prepare heatmap data
     const heatmapData = [];
     
-    postalCodeScores.forEach((data, postalCode) => {
+    neighborhoodScores.forEach((data, neighborhood) => {
         const meanScore = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
         
-        // Use all building locations in this postal code
+        // Use all building locations in this neighborhood
         data.locations.forEach(location => {
             heatmapData.push([location[0], location[1], meanScore]);
         });
+        
+        console.log(`${neighborhood}: mean score ${meanScore.toFixed(3)} (${data.count} buildings)`);
     });
     
-    console.log(`Regional heatmap: ${postalCodeScores.size} postal codes, ${heatmapData.length} points`);
+    console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods, ${heatmapData.length} points`);
     
-    // Create heatmap layer
+    // Create heatmap layer with larger radius for neighborhoods
     state.regionalHeatmapLayer = L.heatLayer(heatmapData, {
-        radius: 30,
-        blur: 25,
+        radius: 40,
+        blur: 35,
         maxZoom: 17,
         max: 1.0,
         gradient: {
