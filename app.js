@@ -187,7 +187,8 @@ async function loadBuildings() {
                 throw new Error('API not available');
             }
         } catch (apiError) {
-            console.log('Loading CSV directly for static deployment...');
+            console.log('API not available - using fallback');
+            // This fallback is rarely needed since Vercel has the API
             const records = await loadCSV('AMS_github.csv');
             buildingsData = processBuildingsData(records);
         }

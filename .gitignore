@@ -2,4 +2,8 @@ node_modules/
 .DS_Store
 *.log
 .env
+.vercel
+
+# GitHub-only subset (not needed for Vercel)
+AMS_github.csv
 
