@@ -11,6 +11,7 @@ const state = {
     map: null,
     buildingsData: [],
     buildingLayers: [],
+    buildingLayerGroup: null,
     selectedBuilding: null,
     currentHighlightedLayer: null,
     heatmapEnabled: false,
@@ -19,6 +20,7 @@ const state = {
     energyWeight: 0.5,
     yearWeight: 0.5,
     busyRoadWeight: 0.0,
+    showBuildingsZoomLevel: 15,
     normalization: {
         minYear: null,
         maxYear: null,
@@ -53,6 +55,12 @@ function initMap() {
         subdomains: 'abcd',
         maxZoom: 20
     }).addTo(state.map);
+    
+    // Create layer group for buildings
+    state.buildingLayerGroup = L.layerGroup();
+    
+    // Setup zoom-based rendering
+    state.map.on('zoomend', handleZoomChange);
     
     setupPanel();
     loadBuildings();
@@ -224,7 +232,9 @@ async function loadBuildings() {
 function addBuildingsToMap() {
     let successCount = 0;
     
-    state.buildingsData.forEach((building) => {
+    console.log(`Processing ${state.buildingsData.length} buildings...`);
+    
+    state.buildingsData.forEach((building, index) => {
         try {
             const geoJSON = wktToGeoJSON(building.polygon);
             if (!geoJSON) return;
@@ -240,15 +250,23 @@ function addBuildingsToMap() {
                 }
             });
             
-            polygon.addTo(state.map);
+            // Add to layer group instead of directly to map
+            polygon.addTo(state.buildingLayerGroup);
             state.buildingLayers.push({ building, layer: polygon });
             successCount++;
+            
+            if (index % 1000 === 0 && index > 0) {
+                console.log(`Processed ${index}/${state.buildingsData.length}...`);
+            }
         } catch (error) {
             console.error('Error adding building:', error);
         }
     });
     
-    console.log(`✓ Added ${successCount} buildings to map`);
+    console.log(`✓ Prepared ${successCount} buildings`);
+    
+    // Only show buildings if zoomed in enough
+    handleZoomChange();
 }
 
 function getDefaultBuildingStyle() {
@@ -474,6 +492,28 @@ function showBuildingInfo(building) {
     html += '</div></div>';
     
     content.innerHTML = html;
+}
+
+// ============================================================================
+// ZOOM-BASED RENDERING (Performance Optimization)
+// ============================================================================
+
+function handleZoomChange() {
+    const currentZoom = state.map.getZoom();
+    
+    if (currentZoom >= state.showBuildingsZoomLevel) {
+        // Zoomed in - show buildings
+        if (!state.map.hasLayer(state.buildingLayerGroup)) {
+            console.log('Showing buildings...');
+            state.buildingLayerGroup.addTo(state.map);
+        }
+    } else {
+        // Zoomed out - hide buildings for performance
+        if (state.map.hasLayer(state.buildingLayerGroup)) {
+            console.log('Hiding buildings for performance...');
+            state.map.removeLayer(state.buildingLayerGroup);
+        }
+    }
 }
 
 // ============================================================================
