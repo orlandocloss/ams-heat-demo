@@ -14,6 +14,8 @@ const state = {
     selectedBuilding: null,
     currentHighlightedLayer: null,
     heatmapEnabled: false,
+    regionalHeatmapEnabled: false,
+    regionalHeatmapLayer: null,
     energyWeight: 0.5,
     yearWeight: 0.5,
     busyRoadWeight: 0.0,
@@ -95,6 +97,9 @@ function setupPanel() {
     elements.busyRoadSlider.addEventListener('input', updateWeights);
     elements.applyBtn.addEventListener('click', applyHeatmap);
     elements.backBtn.addEventListener('click', showHeatmapView);
+    
+    // Regional heatmap button
+    document.getElementById('show-regional-heatmap').addEventListener('click', toggleRegionalHeatmap);
 }
 
 function showHeatmapView() {
@@ -469,6 +474,109 @@ function showBuildingInfo(building) {
     html += '</div></div>';
     
     content.innerHTML = html;
+}
+
+// ============================================================================
+// REGIONAL HEATMAP
+// ============================================================================
+
+function toggleRegionalHeatmap() {
+    if (state.regionalHeatmapEnabled) {
+        // Remove regional heatmap
+        if (state.regionalHeatmapLayer) {
+            state.map.removeLayer(state.regionalHeatmapLayer);
+            state.regionalHeatmapLayer = null;
+        }
+        state.regionalHeatmapEnabled = false;
+        document.getElementById('show-regional-heatmap').textContent = 'Show Regional Heatmap';
+    } else {
+        // Show regional heatmap
+        createRegionalHeatmap();
+        state.regionalHeatmapEnabled = true;
+        document.getElementById('show-regional-heatmap').textContent = 'Hide Regional Heatmap';
+    }
+}
+
+function createRegionalHeatmap() {
+    if (!state.heatmapEnabled) {
+        alert('Please apply building heatmap weights first');
+        return;
+    }
+    
+    // Group buildings by postal code and calculate average score
+    const postalCodeScores = new Map();
+    
+    state.buildingLayers.forEach(({ building }) => {
+        if (!building.addresses || building.addresses.length === 0) return;
+        
+        // Get postal code from first address
+        const postalCode = building.addresses[0].address.match(/\d{4}[A-Z]{2}/)?.[0];
+        if (!postalCode) return;
+        
+        // Calculate this building's score
+        const score = calculateBuildingScore(building);
+        
+        if (!postalCodeScores.has(postalCode)) {
+            postalCodeScores.set(postalCode, {
+                scores: [],
+                locations: [],
+                count: 0
+            });
+        }
+        
+        const data = postalCodeScores.get(postalCode);
+        data.scores.push(score);
+        data.count++;
+        
+        // Use first address location as representative
+        const addr = building.addresses[0];
+        if (addr.latitude && addr.longitude) {
+            data.locations.push([addr.latitude, addr.longitude]);
+        }
+    });
+    
+    // Calculate mean scores and prepare heatmap data
+    const heatmapData = [];
+    
+    postalCodeScores.forEach((data, postalCode) => {
+        const meanScore = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
+        
+        // Use all building locations in this postal code
+        data.locations.forEach(location => {
+            heatmapData.push([location[0], location[1], meanScore]);
+        });
+    });
+    
+    console.log(`Regional heatmap: ${postalCodeScores.size} postal codes, ${heatmapData.length} points`);
+    
+    // Create heatmap layer
+    state.regionalHeatmapLayer = L.heatLayer(heatmapData, {
+        radius: 30,
+        blur: 25,
+        maxZoom: 17,
+        max: 1.0,
+        gradient: {
+            0.0: '#FFD700',  // Yellow
+            0.5: '#FF8C00',  // Orange
+            1.0: '#8B1A1A'   // Dark Red
+        }
+    }).addTo(state.map);
+}
+
+function calculateBuildingScore(building) {
+    const { minYear, maxYear, minEnergy, maxEnergy } = state.normalization;
+    
+    const yearScore = maxYear > minYear ? 
+        1 - (building.oldestYear - minYear) / (maxYear - minYear) : 0.5;
+    
+    const energyScore = maxEnergy > minEnergy ?
+        1 - (building.worstEnergyLabel.score - minEnergy) / (maxEnergy - minEnergy) : 0.5;
+    
+    const busyRoadScore = building.onBusyRoad ? 1.0 : 0.0;
+    
+    return (energyScore * state.energyWeight) + 
+           (yearScore * state.yearWeight) + 
+           (busyRoadScore * state.busyRoadWeight);
 }
 
 // ============================================================================
