@@ -57,10 +57,7 @@ function initMap() {
     }).addTo(state.map);
     
     // Create layer group for buildings
-    state.buildingLayerGroup = L.layerGroup();
-    
-    // Setup zoom-based rendering
-    state.map.on('zoomend', handleZoomChange);
+    state.buildingLayerGroup = L.layerGroup().addTo(state.map);
     
     setupPanel();
     loadBuildings();
