@@ -188,7 +188,7 @@ async function loadBuildings() {
             }
         } catch (apiError) {
             console.log('Loading CSV directly for static deployment...');
-            const records = await loadCSV('AMS_3_col.csv');
+            const records = await loadCSV('AMS_github.csv');
             buildingsData = processBuildingsData(records);
         }
         
