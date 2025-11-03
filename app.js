@@ -231,42 +231,52 @@ async function loadBuildings() {
 
 function addBuildingsToMap() {
     let successCount = 0;
+    const batchSize = 500;
+    let currentBatch = 0;
     
-    console.log(`Processing ${state.buildingsData.length} buildings...`);
+    console.log(`Processing ${state.buildingsData.length} buildings in batches...`);
     
-    state.buildingsData.forEach((building, index) => {
-        try {
-            const geoJSON = wktToGeoJSON(building.polygon);
-            if (!geoJSON) return;
-            
-            building.worstEnergyLabel = getWorstEnergyLabel(building.addresses);
-            building.oldestYear = getOldestYear(building.addresses);
-            building.onBusyRoad = isOnBusyRoad(building.addresses);
-            
-            const polygon = L.geoJSON(geoJSON, {
-                style: getDefaultBuildingStyle(),
-                onEachFeature: (feature, layer) => {
-                    setupBuildingInteractions(layer, building);
-                }
-            });
-            
-            // Add to layer group instead of directly to map
-            polygon.addTo(state.buildingLayerGroup);
-            state.buildingLayers.push({ building, layer: polygon });
-            successCount++;
-            
-            if (index % 1000 === 0 && index > 0) {
-                console.log(`Processed ${index}/${state.buildingsData.length}...`);
+    // Process and render in batches to avoid blocking the UI
+    function processBatch() {
+        const start = currentBatch * batchSize;
+        const end = Math.min(start + batchSize, state.buildingsData.length);
+        
+        for (let i = start; i < end; i++) {
+            const building = state.buildingsData[i];
+            try {
+                const geoJSON = wktToGeoJSON(building.polygon);
+                if (!geoJSON) continue;
+                
+                building.worstEnergyLabel = getWorstEnergyLabel(building.addresses);
+                building.oldestYear = getOldestYear(building.addresses);
+                building.onBusyRoad = isOnBusyRoad(building.addresses);
+                
+                const polygon = L.geoJSON(geoJSON, {
+                    style: getDefaultBuildingStyle(),
+                    onEachFeature: (feature, layer) => {
+                        setupBuildingInteractions(layer, building);
+                    }
+                });
+                
+                polygon.addTo(state.buildingLayerGroup);
+                state.buildingLayers.push({ building, layer: polygon });
+                successCount++;
+            } catch (error) {
+                console.error('Error adding building:', error);
             }
-        } catch (error) {
-            console.error('Error adding building:', error);
         }
-    });
+        
+        currentBatch++;
+        
+        if (end < state.buildingsData.length) {
+            console.log(`Processed ${end}/${state.buildingsData.length}...`);
+            requestAnimationFrame(processBatch);
+        } else {
+            console.log(`✓ Rendered ${successCount} buildings`);
+        }
+    }
     
-    console.log(`✓ Prepared ${successCount} buildings`);
-    
-    // Only show buildings if zoomed in enough
-    handleZoomChange();
+    processBatch();
 }
 
 function getDefaultBuildingStyle() {
@@ -492,28 +502,6 @@ function showBuildingInfo(building) {
     html += '</div></div>';
     
     content.innerHTML = html;
-}
-
-// ============================================================================
-// ZOOM-BASED RENDERING (Performance Optimization)
-// ============================================================================
-
-function handleZoomChange() {
-    const currentZoom = state.map.getZoom();
-    
-    if (currentZoom >= state.showBuildingsZoomLevel) {
-        // Zoomed in - show buildings
-        if (!state.map.hasLayer(state.buildingLayerGroup)) {
-            console.log('Showing buildings...');
-            state.buildingLayerGroup.addTo(state.map);
-        }
-    } else {
-        // Zoomed out - hide buildings for performance
-        if (state.map.hasLayer(state.buildingLayerGroup)) {
-            console.log('Hiding buildings for performance...');
-            state.map.removeLayer(state.buildingLayerGroup);
-        }
-    }
 }
 
 // ============================================================================
