@@ -13,7 +13,18 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     
     try {
-        const csvPath = path.join(process.cwd(), 'AMS_3_col.csv');
+        // Try multiple paths for Vercel deployment
+        let csvPath = path.join(process.cwd(), 'AMS_3_col.csv');
+        if (!fs.existsSync(csvPath)) {
+            csvPath = path.join(process.cwd(), '..', 'AMS_3_col.csv');
+        }
+        if (!fs.existsSync(csvPath)) {
+            csvPath = path.join(__dirname, '..', 'AMS_3_col.csv');
+        }
+        
+        console.log('Looking for CSV at:', csvPath);
+        console.log('File exists:', fs.existsSync(csvPath));
+        
         const data = fs.readFileSync(csvPath, 'utf8');
         
         const records = parse(data, {
