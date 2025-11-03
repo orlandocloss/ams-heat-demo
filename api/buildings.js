@@ -1,10 +1,8 @@
 /**
  * Vercel Serverless Function
- * Returns building data from CSV
+ * Returns building data from CSV stored in Vercel Blob Storage
  */
 
-const fs = require('fs');
-const path = require('path');
 const { parse } = require('csv-parse/sync');
 
 module.exports = async (req, res) => {
@@ -13,19 +11,16 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     
     try {
-        // Try multiple paths for Vercel deployment
-        let csvPath = path.join(process.cwd(), 'AMS_3_col.csv');
-        if (!fs.existsSync(csvPath)) {
-            csvPath = path.join(process.cwd(), '..', 'AMS_3_col.csv');
-        }
-        if (!fs.existsSync(csvPath)) {
-            csvPath = path.join(__dirname, '..', 'AMS_3_col.csv');
+        const blobUrl = process.env.BLOB_CSV_URL;
+        
+        if (!blobUrl) {
+            throw new Error('BLOB_CSV_URL environment variable not set');
         }
         
-        console.log('Looking for CSV at:', csvPath);
-        console.log('File exists:', fs.existsSync(csvPath));
-        
-        const data = fs.readFileSync(csvPath, 'utf8');
+        console.log('Fetching CSV from Blob Storage...');
+        const response = await fetch(blobUrl);
+        const data = await response.text();
+        console.log(`Loaded ${data.length} bytes`);
         
         const records = parse(data, {
             columns: true,
