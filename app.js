@@ -497,10 +497,22 @@ function toggleRegionalHeatmap(e) {
     }
 }
 
-function createRegionalHeatmap() {
+async function createRegionalHeatmap() {
     if (!state.heatmapEnabled) {
         alert('Please apply building heatmap weights first');
+        document.getElementById('show-regional-heatmap').checked = false;
         return;
+    }
+    
+    // Load neighborhood boundaries if not already loaded
+    if (!neighborhoodsGeoJSON) {
+        console.log('Loading neighborhood boundaries...');
+        await loadNeighborhoodsGeoJSON();
+        if (!neighborhoodsGeoJSON) {
+            alert('Failed to load neighborhood boundaries');
+            document.getElementById('show-regional-heatmap').checked = false;
+            return;
+        }
     }
     
     // Group buildings by neighborhood and calculate average score
@@ -509,59 +521,65 @@ function createRegionalHeatmap() {
     state.buildingLayers.forEach(({ building }) => {
         if (!building.addresses || building.addresses.length === 0) return;
         
-        // Get neighborhood from first address
         const neighborhood = building.addresses[0].neighborhood || 'Unknown';
-        
-        // Calculate this building's score
         const score = calculateBuildingScore(building);
         
         if (!neighborhoodScores.has(neighborhood)) {
             neighborhoodScores.set(neighborhood, {
                 scores: [],
-                locations: [],
                 count: 0
             });
         }
         
-        const data = neighborhoodScores.get(neighborhood);
-        data.scores.push(score);
-        data.count++;
-        
-        // Use first address location as representative
-        const addr = building.addresses[0];
-        if (addr.latitude && addr.longitude) {
-            data.locations.push([addr.latitude, addr.longitude]);
-        }
+        neighborhoodScores.get(neighborhood).scores.push(score);
+        neighborhoodScores.get(neighborhood).count++;
     });
     
-    // Calculate mean scores and prepare heatmap data
-    const heatmapData = [];
-    
+    // Calculate mean scores
+    const meanScores = new Map();
     neighborhoodScores.forEach((data, neighborhood) => {
         const meanScore = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
-        
-        // Use all building locations in this neighborhood
-        data.locations.forEach(location => {
-            heatmapData.push([location[0], location[1], meanScore]);
-        });
-        
+        meanScores.set(neighborhood, meanScore);
         console.log(`${neighborhood}: mean score ${meanScore.toFixed(3)} (${data.count} buildings)`);
     });
     
-    console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods, ${heatmapData.length} points`);
+    console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods`);
     
-    // Create heatmap layer with larger radius for neighborhoods
-    state.regionalHeatmapLayer = L.heatLayer(heatmapData, {
-        radius: 40,
-        blur: 35,
-        maxZoom: 17,
-        max: 1.0,
-        gradient: {
-            0.0: '#FFD700',  // Yellow
-            0.5: '#FF8C00',  // Orange
-            1.0: '#8B1A1A'   // Dark Red
+    // Create neighborhood polygon layer
+    state.regionalHeatmapLayer = L.geoJSON(neighborhoodsGeoJSON, {
+        style: (feature) => {
+            const neighborhoodName = feature.properties.Buurt || feature.properties.name;
+            const meanScore = meanScores.get(neighborhoodName) || 0;
+            const color = getHeatColor(meanScore);
+            
+            return {
+                fillColor: color,
+                fillOpacity: 0.5,
+                color: '#333',
+                weight: 1
+            };
+        },
+        onEachFeature: (feature, layer) => {
+            const neighborhoodName = feature.properties.Buurt || feature.properties.name;
+            const data = neighborhoodScores.get(neighborhoodName);
+            
+            if (data) {
+                const meanScore = meanScores.get(neighborhoodName);
+                layer.bindPopup(`
+                    <strong>${neighborhoodName}</strong><br>
+                    Mean Score: ${meanScore.toFixed(3)}<br>
+                    Buildings: ${data.count}
+                `);
+            }
         }
     }).addTo(state.map);
+    
+    // Bring building polygons to front
+    state.map.eachLayer(layer => {
+        if (layer.buildingData) {
+            layer.bringToFront();
+        }
+    });
 }
 
 function calculateBuildingScore(building) {
