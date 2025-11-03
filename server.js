@@ -10,7 +10,7 @@ const { parse } = require('csv-parse/sync');
 
 const app = express();
 const PORT = 3000;
-const CSV_FILE = 'enriched_with_busy_roads.csv';
+const CSV_FILE = 'AMS_3_col.csv';
 
 // ============================================================================
 // MIDDLEWARE
