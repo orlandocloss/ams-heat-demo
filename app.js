@@ -20,7 +20,6 @@ const state = {
     energyWeight: 0.5,
     yearWeight: 0.5,
     busyRoadWeight: 0.0,
-    showBuildingsZoomLevel: 15,
     normalization: {
         minYear: null,
         maxYear: null,
