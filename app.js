@@ -81,7 +81,127 @@ function initMap() {
     state.buildingLayerGroup = L.layerGroup().addTo(state.map);
     
     setupPanel();
+    setupSearch();
     loadBuildings();
+}
+
+// ============================================================================
+// SEARCH FUNCTIONALITY
+// ============================================================================
+
+/**
+ * Setup address search with autocomplete
+ */
+function setupSearch() {
+    const searchInput = document.getElementById('address-search');
+    const searchResults = document.getElementById('search-results');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 3) {
+            searchResults.classList.add('hidden');
+            return;
+        }
+        
+        // Debounce search
+        searchTimeout = setTimeout(() => {
+            performSearch(query, searchResults);
+        }, 300);
+    });
+    
+    // Close search results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+            searchResults.classList.add('hidden');
+        }
+    });
+}
+
+/**
+ * Perform address search and show results
+ */
+async function performSearch(query, resultsContainer) {
+    const queryLower = query.toLowerCase();
+    
+    // Search in building data
+    const matches = [];
+    
+    state.buildingLayers.forEach(({ building, layer }) => {
+        // For buildings without full address data loaded yet, search in building ID
+        // We'll need to fetch minimal address info from the building
+        if (building.id && building.id.toLowerCase().includes(queryLower)) {
+            matches.push({ building, layer });
+        }
+    });
+    
+    // If no matches in IDs, do a server search
+    if (matches.length === 0) {
+        try {
+            const response = await fetch(`/api/search-addresses?q=${encodeURIComponent(query)}`);
+            const results = await response.json();
+            
+            // Match results to buildings
+            results.forEach(result => {
+                const buildingLayer = state.buildingLayers.find(({ building }) => 
+                    building.polygon === result.polygon
+                );
+                if (buildingLayer) {
+                    matches.push({
+                        ...buildingLayer,
+                        address: result.address,
+                        neighborhood: result.neighborhood
+                    });
+                }
+            });
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    }
+    
+    displaySearchResults(matches.slice(0, 10), resultsContainer);
+}
+
+/**
+ * Display search results
+ */
+function displaySearchResults(matches, container) {
+    if (matches.length === 0) {
+        container.innerHTML = '<div class="search-result-item" style="color: #666;">No results found</div>';
+        container.classList.remove('hidden');
+        return;
+    }
+    
+    let html = '';
+    matches.forEach(({ building, layer, address, neighborhood }) => {
+        const displayAddress = address || `Building (${building.addressCount} addresses)`;
+        const displayNeighborhood = neighborhood || building.neighborhood || '';
+        
+        html += `
+            <div class="search-result-item" data-building-id="${building.id || building.polygon.substring(0, 50)}">
+                <div class="search-result-address">${displayAddress}</div>
+                <div class="search-result-meta">${displayNeighborhood}</div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+    
+    // Add click handlers
+    container.querySelectorAll('.search-result-item').forEach((item, index) => {
+        item.addEventListener('click', () => {
+            const match = matches[index];
+            const latlng = L.latLng(match.building.latitude, match.building.longitude);
+            selectBuilding(match.building, match.layer, latlng);
+            container.classList.add('hidden');
+            document.getElementById('address-search').value = '';
+        });
+    });
 }
 
 // ============================================================================
