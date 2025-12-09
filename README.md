@@ -2,61 +2,37 @@
 
 Open-source project mapping building heat readiness in Amsterdam.
 
-## 🔥 Live Site
-
-**https://ams-heat-demo.vercel.app**
+**Live Site:** https://open-heat-amsterdam.vercel.app
 
 ## About
 
-An open-data initiative by **AMS Institute**, **Gemeente Amsterdam**, and **MADE Living Lab** (Wageningen University & Research) to identify physical characteristics that increase heat vulnerability in Amsterdam buildings.
+An open-data initiative by AMS Institute, Gemeente Amsterdam, and MADE Living Lab (Wageningen University & Research) to identify physical characteristics that increase heat vulnerability in Amsterdam buildings.
 
-### Mission
+## Mission
 
-Create a comprehensive, open-access database of building-level heat risk factors including:
-- Energy efficiency ratings
-- Building age and construction type
-- Environmental factors (busy roads, etc.)
-- Neighborhood-level aggregations
+Create a comprehensive, open-access database of building-level heat risk factors. Integrate energy efficiency ratings, building age, construction type, environmental factors, and neighborhood-level aggregations. Enable data-driven decisions about urban heat mitigation through custom weighted heatmaps and regional analysis.
 
-### Current Status
+## Current Status
 
-**Ongoing project** - actively collecting and integrating data:
-- ✅ 52K buildings with polygons (predominantly city center)
-- ✅ Energy labels, building years, busy road data
-- ⚠️ Outskirts and some physical characteristics still being mapped
-- 🎯 Goal: Complete Amsterdam coverage with comprehensive metrics
+Ongoing project actively collecting and integrating data. Current coverage includes approximately 52,000 buildings with polygon data, predominantly in the city center. Data includes energy labels, building years, busy road locations, and neighborhood classifications. Outskirts and some physical characteristics are still being mapped. Goal is complete Amsterdam coverage with comprehensive heat-related metrics.
 
 ## Features
 
-- **Binary Filter System** - Target specific criteria (e.g., "Energy ≤ D", "Year ≤ 1900")
-- **Custom Weighted Heatmaps** - Combine multiple factors
-- **Regional Analysis** - Mean scores by neighborhood
-- **Address Search** - Find specific buildings instantly
-- **Interactive Details** - Click buildings for full information
+Binary filter system to target specific criteria. Custom weighted heatmaps combining multiple factors. Regional analysis showing mean scores by neighborhood. Address search for finding specific buildings. Interactive building details on click.
 
 ## Contributing
 
-This is an **open project**:
+**Data contributions:** orlando.closs@wur.nl  
+**Code contributions:** https://github.com/orlandocloss/open-heat-amsterdam  
+**Research collaboration:** Contact for partnership opportunities
 
-- 📊 **Data**: Email [orlando.closs@wur.nl](mailto:orlando.closs@wur.nl) to contribute datasets
-- 💻 **Code**: Contribute on [GitHub](https://github.com/orlandocloss/ams-heat-demo)
-- 📄 **Research**: Research paper coming soon
+Research paper forthcoming.
 
-## Local Development
+## Technical
 
-```bash
-npm install
-npm run dev
-```
-
-## Tech Stack
-
-- Vanilla JavaScript, Leaflet.js
-- Vercel Serverless Functions
-- Canvas rendering (50K+ polygons)
-- Amsterdam Open Data integration
+Vanilla JavaScript with Leaflet.js for mapping. Vercel serverless functions for data processing. Canvas rendering for 50K+ polygon performance. Integrates Amsterdam Open Data.
 
 ---
 
-**MADE Living Lab** | Wageningen University & Research  
-Contact: orlando.closs@wur.nl
+MADE Living Lab | Wageningen University & Research  
+orlando.closs@wur.nl
