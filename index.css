@@ -45,9 +45,9 @@ body {
 }
 
 .pixel.active {
-    background-color: #8B1A1A;
-    box-shadow: 0 0 4px rgba(139, 26, 26, 0.6);
-    animation: pixelHeatOnce 2s ease-in-out forwards;
+    background-color: #FF8C00;
+    box-shadow: 0 0 6px rgba(255, 140, 0, 0.8);
+    animation: pixelHeatOnce 4s ease-in-out forwards;
 }
 
 @keyframes pixelHeatOnce {
@@ -55,13 +55,21 @@ body {
         background-color: #FFD700;
         box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
     }
-    50% {
+    25% {
         background-color: #FF8C00;
         box-shadow: 0 0 8px rgba(255, 140, 0, 0.8);
     }
-    100% {
+    50% {
         background-color: #8B1A1A;
         box-shadow: 0 0 4px rgba(139, 26, 26, 0.6);
+    }
+    75% {
+        background-color: #FFD700;
+        box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+    }
+    100% {
+        background-color: #FF8C00;
+        box-shadow: 0 0 6px rgba(255, 140, 0, 0.8);
     }
 }
 
