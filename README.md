@@ -1,4 +1,4 @@
-# HEATMAP // AMSTERDAM
+# OPEN HEAT // AMSTERDAM
 
 Open-source project mapping building heat readiness in Amsterdam.
 
@@ -7,14 +7,6 @@ Open-source project mapping building heat readiness in Amsterdam.
 ## About
 
 An open-data initiative by AMS Institute, Gemeente Amsterdam, and MADE Living Lab (Wageningen University & Research) to identify physical characteristics that increase heat vulnerability in Amsterdam buildings.
-
-## Mission
-
-Create a comprehensive, open-access database of building-level heat risk factors. Integrate energy efficiency ratings, building age, construction type, environmental factors, and neighborhood-level aggregations. Enable data-driven decisions about urban heat mitigation through custom weighted heatmaps and regional analysis.
-
-## Current Status
-
-Ongoing project actively collecting and integrating data. Current coverage includes approximately 52,000 buildings with polygon data, predominantly in the city center. Data includes energy labels, building years, busy road locations, and neighborhood classifications. Outskirts and some physical characteristics are still being mapped. Goal is complete Amsterdam coverage with comprehensive heat-related metrics.
 
 ## Features
 

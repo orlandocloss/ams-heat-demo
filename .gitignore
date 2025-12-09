@@ -4,12 +4,12 @@ node_modules/
 .env
 .vercel
 
-# Large files (not pushed to git, but kept locally)
-# CSV is in Vercel Blob for deployment
-# Keep locally for data updates
+# Data files (stored in Vercel Blob, not in git)
+AMS_3_col.csv
+*.csv
 *.svg
 
-# Utility scripts (not part of the app)
+# Utility scripts
 add-neighborhoods.js
 export-to-svg.js
 upload-to-blob.js
