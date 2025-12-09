@@ -27,7 +27,7 @@ const CONFIG = {
     DEFAULT_ZOOM: 13,
     MIN_ZOOM: 13,
     MAX_ZOOM: 20,
-    MIN_LOAD_TIME: 3000,
+    MIN_LOAD_TIME: 1000,  // 1 second minimum (just enough to see the animation)
     ENERGY_RANKING: {
         'A++++': 8, 'A+++': 7, 'A++': 6, 'A+': 5, 'A': 4,
         'B': 3, 'C': 2, 'D': 1, 'E': 0, 'F': -1, 'G': -2
