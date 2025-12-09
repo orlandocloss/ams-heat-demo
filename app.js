@@ -1,7 +1,34 @@
 /**
  * HEATMAP // AMSTERDAM
  * Interactive building heatmap visualization
+ * 
+ * Features:
+ * - Custom weighted heatmaps (energy, age, busy roads)
+ * - Regional neighborhood analysis
+ * - Interactive building details
+ * - Pixel art retro UI
  */
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const CONFIG = {
+    BOUNDS: {
+        southwest: [52.2784, 4.7283],
+        northeast: [52.4311, 5.0641]
+    },
+    CENTER: [52.3676, 4.9041],
+    DEFAULT_ZOOM: 13,
+    MIN_ZOOM: 13,
+    MAX_ZOOM: 20,
+    MIN_LOAD_TIME: 3000,
+    BATCH_SIZE: 500,
+    ENERGY_RANKING: {
+        'A++++': 8, 'A+++': 7, 'A++': 6, 'A+': 5, 'A': 4,
+        'B': 3, 'C': 2, 'D': 1, 'E': 0, 'F': -1, 'G': -2
+    }
+};
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -28,14 +55,6 @@ const state = {
     }
 };
 
-const AMSTERDAM_BOUNDS = {
-    southwest: [52.2784, 4.7283],
-    northeast: [52.4311, 5.0641]
-};
-
-const AMSTERDAM_CENTER = [52.3676, 4.9041];
-const DEFAULT_ZOOM = 13;
-const MIN_LOAD_TIME = 3000;
 
 // ============================================================================
 // MAP INITIALIZATION
@@ -66,6 +85,9 @@ function initMap() {
 // PANEL MANAGEMENT
 // ============================================================================
 
+/**
+ * Setup panel controls and event listeners
+ */
 function setupPanel() {
     const elements = {
         energySlider: document.getElementById('energy-weight'),
@@ -181,33 +203,22 @@ function createPixelText() {
 // DATA LOADING
 // ============================================================================
 
+/**
+ * Load building data from Vercel API
+ */
 async function loadBuildings() {
     const startTime = Date.now();
     createPixelText();
     
     try {
-        // Try API first (local server), fallback to direct CSV (GitHub Pages)
-        let buildingsData;
-        try {
-            const response = await fetch('/api/buildings');
-            if (response.ok) {
-                buildingsData = await response.json();
-            } else {
-                throw new Error('API not available');
-            }
-        } catch (apiError) {
-            console.log('API not available - using fallback');
-            // This fallback is rarely needed since Vercel has the API
-            const records = await loadCSV('AMS_github.csv');
-            buildingsData = processBuildingsData(records);
-        }
+        const response = await fetch('/api/buildings');
+        state.buildingsData = await response.json();
         
-        state.buildingsData = buildingsData;
         console.log(`Loaded ${state.buildingsData.length} buildings`);
         addBuildingsToMap();
         
         const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, MIN_LOAD_TIME - elapsed);
+        const remaining = Math.max(0, CONFIG.MIN_LOAD_TIME - elapsed);
         
         setTimeout(() => {
             document.getElementById('loading').classList.add('hidden');
@@ -217,7 +228,7 @@ async function loadBuildings() {
         setTimeout(() => {
             document.getElementById('loading').innerHTML = 
                 '<div style="color: #CD5C5C; text-align: center;"><h2>Error</h2><p>Please refresh</p></div>';
-        }, MIN_LOAD_TIME);
+        }, CONFIG.MIN_LOAD_TIME);
     }
 }
 
@@ -225,17 +236,20 @@ async function loadBuildings() {
 // BUILDING RENDERING
 // ============================================================================
 
+/**
+ * Add buildings to map in batches for smooth performance
+ * Uses Canvas renderer to handle 50K+ polygons efficiently
+ */
 function addBuildingsToMap() {
     let successCount = 0;
-    const batchSize = 500;
     let currentBatch = 0;
     
     console.log(`Processing ${state.buildingsData.length} buildings in batches...`);
     
     // Process and render in batches to avoid blocking the UI
     function processBatch() {
-        const start = currentBatch * batchSize;
-        const end = Math.min(start + batchSize, state.buildingsData.length);
+        const start = currentBatch * CONFIG.BATCH_SIZE;
+        const end = Math.min(start + CONFIG.BATCH_SIZE, state.buildingsData.length);
         
         for (let i = start; i < end; i++) {
             const building = state.buildingsData[i];
@@ -319,17 +333,12 @@ function handleBuildingHover(layer, isHovering) {
 // ENERGY & YEAR ANALYSIS
 // ============================================================================
 
-const ENERGY_LABEL_RANKING = {
-    'A++++': 8, 'A+++': 7, 'A++': 6, 'A+': 5, 'A': 4,
-    'B': 3, 'C': 2, 'D': 1, 'E': 0, 'F': -1, 'G': -2
-};
-
 function getWorstEnergyLabel(addresses) {
     let worstLabel = 'A++++';
     let worstRank = 8;
     
     addresses.forEach(addr => {
-        const rank = ENERGY_LABEL_RANKING[addr.energyLabel] ?? 0;
+        const rank = CONFIG.ENERGY_RANKING[addr.energyLabel] ?? 0;
         if (rank < worstRank) {
             worstRank = rank;
             worstLabel = addr.energyLabel;
@@ -360,6 +369,9 @@ function isOnBusyRoad(addresses) {
 // HEATMAP APPLICATION
 // ============================================================================
 
+/**
+ * Apply weighted heatmap colors to all buildings
+ */
 function applyHeatmap() {
     state.heatmapEnabled = true;
     
@@ -501,9 +513,12 @@ function showBuildingInfo(building) {
 }
 
 // ============================================================================
-// REGIONAL HEATMAP
+// REGIONAL HEATMAP BY NEIGHBORHOOD
 // ============================================================================
 
+/**
+ * Toggle regional heatmap overlay showing mean scores by neighborhood
+ */
 function toggleRegionalHeatmap(e) {
     const checked = e.target.checked;
     

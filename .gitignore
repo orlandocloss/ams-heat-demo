@@ -4,6 +4,12 @@ node_modules/
 .env
 .vercel
 
-# GitHub-only subset (not needed for Vercel)
-AMS_github.csv
+# Data files (stored in Vercel Blob)
+*.csv
+*.svg
+
+# Build/utility scripts
+add-neighborhoods.js
+export-to-svg.js
+upload-to-blob.js
 

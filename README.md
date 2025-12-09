@@ -2,39 +2,64 @@
 
 Interactive building visualization with custom weighted heatmaps.
 
-## Demo
+## 🔥 Live Demo
 
-Visit: **https://orlandocloss.github.io/ams-heat-demo/**
+**https://ams-heat-demo.vercel.app**
 
 ## Features
 
-- Interactive map of Amsterdam buildings
-- Custom heatmap based on energy labels, building age, and busy roads
-- Pixel art retro interface
-- Click buildings for detailed information
+- **Custom Heatmaps** - Weight energy labels, building age, and busy road location
+- **Regional View** - See mean scores by Amsterdam neighborhood
+- **Interactive Map** - Click buildings for detailed information
+- **Pixel Art UI** - Retro terminal-inspired design
 
-## Local development
+## Local Development
 
 ```bash
 npm install
-npm start
+npm run dev
 ```
 
 Open `http://localhost:3000`
 
-## How it works
+## Project Structure
 
-Configure three weight factors (must total ≤ 1.0):
-- **Energy** - Poor efficiency → higher priority
-- **Age** - Older buildings → higher priority
-- **Busy Road** - Located on busy road → higher priority
+```
+├── index.html              # Main page
+├── app.js                  # Application logic
+├── styles.css              # Styling
+├── neighborhoods.js        # Neighborhood boundaries loader
+├── api/
+│   └── buildings.js        # Vercel serverless function
+├── vercel.json             # Vercel configuration
+└── package.json            # Dependencies
+```
 
-Buildings are colored from yellow (low priority) to red (high priority).
+## How It Works
+
+1. **Configure Weights** (must total ≤ 1.0)
+   - Energy: Poor efficiency → higher priority
+   - Age: Older buildings → higher priority  
+   - Busy Road: On busy road → higher priority
+
+2. **Apply Heatmap** - Buildings colored yellow → orange → red
+
+3. **Regional Heatmap** (checkbox) - Show mean scores by neighborhood
 
 ## Data
 
-3,853 addresses across 1,169 unique buildings in Amsterdam.
+- **371K** address records
+- **52K** unique building polygons
+- **44** Amsterdam neighborhoods
+- Data stored in Vercel Blob Storage
+
+## Tech Stack
+
+- **Frontend**: Vanilla JavaScript, Leaflet.js
+- **Backend**: Vercel Serverless Functions
+- **Storage**: Vercel Blob
+- **Map Tiles**: CARTO Light
 
 ---
 
-Built for Living Lab Amsterdam Dashboard
+Built for Living Lab Amsterdam

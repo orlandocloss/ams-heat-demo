@@ -1,11 +1,10 @@
 {
   "name": "amsterdam-buildings-map",
   "version": "1.0.0",
-  "description": "Interactive map of Amsterdam buildings with addresses, energy labels, and building years",
-  "main": "index.js",
+  "description": "Interactive heatmap visualization of Amsterdam buildings",
+  "main": "index.html",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "vercel dev"
   },
   "keywords": [
     "amsterdam",
