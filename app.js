@@ -39,15 +39,17 @@ const state = {
     heatmapEnabled: false,
     regionalHeatmapEnabled: false,
     regionalHeatmapLayer: null,
-    energyWeight: 0.5,
-    yearWeight: 0.5,
-    busyRoadWeight: 0.0,
-    normalization: {
-        minYear: null,
-        maxYear: null,
-        minEnergy: null,
-        maxEnergy: null
-    }
+    
+    // Binary filter criteria
+    energyOperator: '<=',
+    energyValue: 'C',
+    energyWeight: 0.33,
+    
+    yearOperator: '<=',
+    yearValue: 1900,
+    yearWeight: 0.33,
+    
+    busyRoadWeight: 0.33
 };
 
 
@@ -87,12 +89,19 @@ function initMap() {
  */
 function setupPanel() {
     const elements = {
-        energySlider: document.getElementById('energy-weight'),
-        yearSlider: document.getElementById('year-weight'),
-        busyRoadSlider: document.getElementById('busy-road-weight'),
-        energyValue: document.getElementById('energy-weight-value'),
-        yearValue: document.getElementById('year-weight-value'),
-        busyRoadValue: document.getElementById('busy-road-weight-value'),
+        energyOperator: document.getElementById('energy-operator'),
+        energyValue: document.getElementById('energy-value'),
+        energyWeight: document.getElementById('energy-weight'),
+        energyWeightValue: document.getElementById('energy-weight-value'),
+        
+        yearOperator: document.getElementById('year-operator'),
+        yearValue: document.getElementById('year-value'),
+        yearWeight: document.getElementById('year-weight'),
+        yearWeightValue: document.getElementById('year-weight-value'),
+        
+        busyRoadWeight: document.getElementById('busy-road-weight'),
+        busyRoadWeightValue: document.getElementById('busy-road-weight-value'),
+        
         totalWeight: document.getElementById('total-weight'),
         warning: document.getElementById('weight-warning'),
         applyBtn: document.getElementById('apply-heatmap'),
@@ -100,13 +109,21 @@ function setupPanel() {
     };
     
     const updateWeights = () => {
-        state.energyWeight = parseFloat(elements.energySlider.value);
-        state.yearWeight = parseFloat(elements.yearSlider.value);
-        state.busyRoadWeight = parseFloat(elements.busyRoadSlider.value);
+        // Update filter values
+        state.energyOperator = elements.energyOperator.value;
+        state.energyValue = elements.energyValue.value;
+        state.energyWeight = parseFloat(elements.energyWeight.value);
         
-        elements.energyValue.textContent = state.energyWeight.toFixed(2);
-        elements.yearValue.textContent = state.yearWeight.toFixed(2);
-        elements.busyRoadValue.textContent = state.busyRoadWeight.toFixed(2);
+        state.yearOperator = elements.yearOperator.value;
+        state.yearValue = parseInt(elements.yearValue.value);
+        state.yearWeight = parseFloat(elements.yearWeight.value);
+        
+        state.busyRoadWeight = parseFloat(elements.busyRoadWeight.value);
+        
+        // Update displays
+        elements.energyWeightValue.textContent = state.energyWeight.toFixed(2);
+        elements.yearWeightValue.textContent = state.yearWeight.toFixed(2);
+        elements.busyRoadWeightValue.textContent = state.busyRoadWeight.toFixed(2);
         
         const total = state.energyWeight + state.yearWeight + state.busyRoadWeight;
         elements.totalWeight.textContent = total.toFixed(2);
@@ -115,9 +132,17 @@ function setupPanel() {
         elements.applyBtn.disabled = total > 1.0;
     };
     
-    elements.energySlider.addEventListener('input', updateWeights);
-    elements.yearSlider.addEventListener('input', updateWeights);
-    elements.busyRoadSlider.addEventListener('input', updateWeights);
+    // Add listeners for all controls
+    elements.energyOperator.addEventListener('change', updateWeights);
+    elements.energyValue.addEventListener('change', updateWeights);
+    elements.energyWeight.addEventListener('input', updateWeights);
+    
+    elements.yearOperator.addEventListener('change', updateWeights);
+    elements.yearValue.addEventListener('input', updateWeights);
+    elements.yearWeight.addEventListener('input', updateWeights);
+    
+    elements.busyRoadWeight.addEventListener('input', updateWeights);
+    
     elements.applyBtn.addEventListener('click', applyHeatmap);
     elements.backBtn.addEventListener('click', showHeatmapView);
     
@@ -334,18 +359,16 @@ function getEnergyLabelFromRank(rank) {
 // ============================================================================
 
 /**
- * Apply weighted heatmap colors to all buildings
+ * Apply weighted heatmap colors to all buildings using binary filters
  */
 function applyHeatmap() {
     state.heatmapEnabled = true;
-    
-    calculateNormalization();
     
     state.buildingLayers.forEach(({ building, layer }) => {
         layer.setStyle(getHeatmapStyle(building));
     });
     
-    console.log(`Heatmap applied: Energy=${state.energyWeight}, Year=${state.yearWeight}, BusyRoad=${state.busyRoadWeight}`);
+    console.log(`Heatmap applied: Energy ${state.energyOperator} ${state.energyValue} (${state.energyWeight}), Year ${state.yearOperator} ${state.yearValue} (${state.yearWeight}), BusyRoad (${state.busyRoadWeight})`);
     
     // Recalculate regional heatmap if it's currently visible
     if (state.regionalHeatmapEnabled && state.regionalHeatmapLayer) {
@@ -357,38 +380,40 @@ function applyHeatmap() {
 }
 
 /**
- * Calculate normalization ranges for heatmap scores
+ * Check if building matches energy label criteria
  */
-function calculateNormalization() {
-    state.normalization = {
-        minYear: Infinity,
-        maxYear: -Infinity,
-        minEnergy: Infinity,
-        maxEnergy: -Infinity
-    };
+function matchesEnergyCriteria(building) {
+    const buildingRank = building.worstEnergyRank;
+    const thresholdRank = CONFIG.ENERGY_RANKING[state.energyValue] ?? 0;
     
-    state.buildingsData.forEach(building => {
-        state.normalization.minYear = Math.min(state.normalization.minYear, building.oldestYear);
-        state.normalization.maxYear = Math.max(state.normalization.maxYear, building.oldestYear);
-        state.normalization.minEnergy = Math.min(state.normalization.minEnergy, building.worstEnergyRank);
-        state.normalization.maxEnergy = Math.max(state.normalization.maxEnergy, building.worstEnergyRank);
-    });
+    if (state.energyOperator === '<=') {
+        return buildingRank <= thresholdRank; // Worse or equal (lower rank)
+    } else {
+        return buildingRank >= thresholdRank; // Better or equal (higher rank)
+    }
 }
 
 /**
- * Get heatmap style for a building based on weighted score
+ * Check if building matches year criteria
+ */
+function matchesYearCriteria(building) {
+    if (state.yearOperator === '<=') {
+        return building.oldestYear <= state.yearValue;
+    } else {
+        return building.oldestYear >= state.yearValue;
+    }
+}
+
+/**
+ * Get heatmap style for a building using binary filters
  */
 function getHeatmapStyle(building) {
-    const { minYear, maxYear, minEnergy, maxEnergy } = state.normalization;
-    
-    const yearScore = maxYear > minYear ? 
-        1 - (building.oldestYear - minYear) / (maxYear - minYear) : 0.5;
-    
-    const energyScore = maxEnergy > minEnergy ?
-        1 - (building.worstEnergyRank - minEnergy) / (maxEnergy - minEnergy) : 0.5;
-    
+    // Binary scores: 1.0 if matches criteria, 0.0 if not
+    const energyScore = matchesEnergyCriteria(building) ? 1.0 : 0.0;
+    const yearScore = matchesYearCriteria(building) ? 1.0 : 0.0;
     const busyRoadScore = building.onBusyRoad ? 1.0 : 0.0;
     
+    // Calculate weighted sum
     const weightedScore = 
         (energyScore * state.energyWeight) + 
         (yearScore * state.yearWeight) + 
@@ -690,17 +715,11 @@ async function createRegionalHeatmap() {
 }
 
 /**
- * Calculate weighted score for a building (used in regional heatmap)
+ * Calculate weighted score for a building using binary filters
  */
 function calculateBuildingScore(building) {
-    const { minYear, maxYear, minEnergy, maxEnergy } = state.normalization;
-    
-    const yearScore = maxYear > minYear ? 
-        1 - (building.oldestYear - minYear) / (maxYear - minYear) : 0.5;
-    
-    const energyScore = maxEnergy > minEnergy ?
-        1 - (building.worstEnergyRank - minEnergy) / (maxEnergy - minEnergy) : 0.5;
-    
+    const energyScore = matchesEnergyCriteria(building) ? 1.0 : 0.0;
+    const yearScore = matchesYearCriteria(building) ? 1.0 : 0.0;
     const busyRoadScore = building.onBusyRoad ? 1.0 : 0.0;
     
     return (energyScore * state.energyWeight) + 

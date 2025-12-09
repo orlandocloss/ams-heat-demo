@@ -30,28 +30,55 @@
         
         <!-- Heatmap Configuration View -->
         <div id="heatmap-view" class="panel-content">
+            <!-- Energy Label Filter -->
             <div class="control-section">
+                <label class="control-label">Energy Label</label>
+                <div class="filter-row">
+                    <select id="energy-operator" class="filter-select">
+                        <option value="<=">≤</option>
+                        <option value=">=">=</option>
+                    </select>
+                    <select id="energy-value" class="filter-select">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C" selected>C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="G">G</option>
+                    </select>
+                </div>
                 <label class="control-label">
-                    Energy <span id="energy-weight-value">0.5</span>
+                    Weight <span id="energy-weight-value">0.33</span>
                 </label>
-                <input type="range" id="energy-weight" min="0" max="1" step="0.05" value="0.5" class="slider">
-                <p class="help-text">Poor efficiency → higher priority</p>
+                <input type="range" id="energy-weight" min="0" max="1" step="0.01" value="0.33" class="slider">
+                <p class="help-text">Binary: matches criteria = 1.0, else 0.0</p>
             </div>
             
+            <!-- Building Year Filter -->
             <div class="control-section">
+                <label class="control-label">Building Year</label>
+                <div class="filter-row">
+                    <select id="year-operator" class="filter-select">
+                        <option value="<=">≤</option>
+                        <option value=">=" selected>≥</option>
+                    </select>
+                    <input type="number" id="year-value" class="filter-input" value="1900" min="1600" max="2024">
+                </div>
                 <label class="control-label">
-                    Age <span id="year-weight-value">0.5</span>
+                    Weight <span id="year-weight-value">0.33</span>
                 </label>
-                <input type="range" id="year-weight" min="0" max="1" step="0.05" value="0.5" class="slider">
-                <p class="help-text">Older buildings → higher priority</p>
+                <input type="range" id="year-weight" min="0" max="1" step="0.01" value="0.33" class="slider">
+                <p class="help-text">Binary: matches criteria = 1.0, else 0.0</p>
             </div>
             
+            <!-- Busy Road Filter -->
             <div class="control-section">
                 <label class="control-label">
-                    Busy Road <span id="busy-road-weight-value">0.00</span>
+                    Busy Road <span id="busy-road-weight-value">0.33</span>
                 </label>
-                <input type="range" id="busy-road-weight" min="0" max="1" step="0.05" value="0" class="slider">
-                <p class="help-text">Busy roads → higher priority (binary)</p>
+                <input type="range" id="busy-road-weight" min="0" max="1" step="0.01" value="0.33" class="slider">
+                <p class="help-text">Binary: on busy road = 1.0, else 0.0</p>
             </div>
             
             <div class="weight-summary">
