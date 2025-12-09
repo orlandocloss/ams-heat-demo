@@ -1,17 +1,46 @@
 # HEATMAP // AMSTERDAM
 
-Interactive building visualization with custom weighted heatmaps.
+Open-source project mapping building heat readiness in Amsterdam.
 
-## 🔥 Live Demo
+## 🔥 Live Site
 
 **https://ams-heat-demo.vercel.app**
 
+## About
+
+An open-data initiative by **AMS Institute**, **Gemeente Amsterdam**, and **MADE Living Lab** (Wageningen University & Research) to identify physical characteristics that increase heat vulnerability in Amsterdam buildings.
+
+### Mission
+
+Create a comprehensive, open-access database of building-level heat risk factors including:
+- Energy efficiency ratings
+- Building age and construction type
+- Environmental factors (busy roads, etc.)
+- Neighborhood-level aggregations
+
+### Current Status
+
+**Ongoing project** - actively collecting and integrating data:
+- ✅ 52K buildings with polygons (predominantly city center)
+- ✅ Energy labels, building years, busy road data
+- ⚠️ Outskirts and some physical characteristics still being mapped
+- 🎯 Goal: Complete Amsterdam coverage with comprehensive metrics
+
 ## Features
 
-- **Custom Heatmaps** - Weight energy labels, building age, and busy road location
-- **Regional View** - See mean scores by Amsterdam neighborhood
-- **Interactive Map** - Click buildings for detailed information
-- **Pixel Art UI** - Retro terminal-inspired design
+- **Binary Filter System** - Target specific criteria (e.g., "Energy ≤ D", "Year ≤ 1900")
+- **Custom Weighted Heatmaps** - Combine multiple factors
+- **Regional Analysis** - Mean scores by neighborhood
+- **Address Search** - Find specific buildings instantly
+- **Interactive Details** - Click buildings for full information
+
+## Contributing
+
+This is an **open project**:
+
+- 📊 **Data**: Email [orlando.closs@wur.nl](mailto:orlando.closs@wur.nl) to contribute datasets
+- 💻 **Code**: Contribute on [GitHub](https://github.com/orlandocloss/ams-heat-demo)
+- 📄 **Research**: Research paper coming soon
 
 ## Local Development
 
@@ -20,46 +49,14 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`
-
-## Project Structure
-
-```
-├── index.html              # Main page
-├── app.js                  # Application logic
-├── styles.css              # Styling
-├── neighborhoods.js        # Neighborhood boundaries loader
-├── api/
-│   └── buildings.js        # Vercel serverless function
-├── vercel.json             # Vercel configuration
-└── package.json            # Dependencies
-```
-
-## How It Works
-
-1. **Configure Weights** (must total ≤ 1.0)
-   - Energy: Poor efficiency → higher priority
-   - Age: Older buildings → higher priority  
-   - Busy Road: On busy road → higher priority
-
-2. **Apply Heatmap** - Buildings colored yellow → orange → red
-
-3. **Regional Heatmap** (checkbox) - Show mean scores by neighborhood
-
-## Data
-
-- **371K** address records
-- **52K** unique building polygons
-- **44** Amsterdam neighborhoods
-- Data stored in Vercel Blob Storage
-
 ## Tech Stack
 
-- **Frontend**: Vanilla JavaScript, Leaflet.js
-- **Backend**: Vercel Serverless Functions
-- **Storage**: Vercel Blob
-- **Map Tiles**: CARTO Light
+- Vanilla JavaScript, Leaflet.js
+- Vercel Serverless Functions
+- Canvas rendering (50K+ polygons)
+- Amsterdam Open Data integration
 
 ---
 
-Built for Living Lab Amsterdam
+**MADE Living Lab** | Wageningen University & Research  
+Contact: orlando.closs@wur.nl
