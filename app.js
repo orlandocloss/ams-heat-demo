@@ -591,43 +591,76 @@ async function createRegionalHeatmap() {
         console.log(`${neighborhood}: mean score ${meanScore.toFixed(3)} (${data.count} buildings)`);
     });
     
-    console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods`);
+    console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods with data`);
+    
+    // Log available neighborhood names for debugging
+    console.log('Neighborhoods in data:', Array.from(neighborhoodScores.keys()).slice(0, 10).join(', '));
     
     // Create neighborhood polygon layer
     state.regionalHeatmapLayer = L.geoJSON(neighborhoodsGeoJSON, {
         style: (feature) => {
-            const neighborhoodName = feature.properties.Buurt || feature.properties.name;
-            const meanScore = meanScores.get(neighborhoodName) || 0;
-            const color = getHeatColor(meanScore);
+            // Try different property names for neighborhood
+            const neighborhoodName = feature.properties.Buurt || 
+                                     feature.properties.name || 
+                                     feature.properties.Buurt_naam ||
+                                     feature.properties.naam;
             
-            return {
-                fillColor: color,
-                fillOpacity: 0.5,
-                color: '#333',
-                weight: 1
-            };
+            const data = neighborhoodScores.get(neighborhoodName);
+            
+            if (data) {
+                // Has buildings - color by mean score
+                const meanScore = meanScores.get(neighborhoodName);
+                const color = getHeatColor(meanScore);
+                
+                return {
+                    fillColor: color,
+                    fillOpacity: 0.6,
+                    color: '#333',
+                    weight: 2
+                };
+            } else {
+                // No buildings - transparent
+                return {
+                    fillColor: 'none',
+                    fillOpacity: 0,
+                    color: '#999',
+                    weight: 1,
+                    dashArray: '3, 3'
+                };
+            }
         },
         onEachFeature: (feature, layer) => {
-            const neighborhoodName = feature.properties.Buurt || feature.properties.name;
+            const neighborhoodName = feature.properties.Buurt || 
+                                     feature.properties.name || 
+                                     feature.properties.Buurt_naam ||
+                                     feature.properties.naam;
+            
             const data = neighborhoodScores.get(neighborhoodName);
             
             if (data) {
                 const meanScore = meanScores.get(neighborhoodName);
                 layer.bindPopup(`
-                    <strong>${neighborhoodName}</strong><br>
-                    Mean Score: ${meanScore.toFixed(3)}<br>
-                    Buildings: ${data.count}
+                    <div style="font-family: Courier New; padding: 10px;">
+                        <strong style="color: #FFD700; text-transform: uppercase;">${neighborhoodName}</strong><br>
+                        <span style="color: #666;">Mean Score:</span> <strong style="color: #FF8C00;">${meanScore.toFixed(3)}</strong><br>
+                        <span style="color: #666;">Buildings:</span> <strong style="color: #FF8C00;">${data.count}</strong>
+                    </div>
+                `);
+            } else {
+                layer.bindPopup(`
+                    <div style="font-family: Courier New; padding: 10px;">
+                        <strong style="color: #999; text-transform: uppercase;">${neighborhoodName}</strong><br>
+                        <span style="color: #666;">No building data</span>
+                    </div>
                 `);
             }
         }
     }).addTo(state.map);
     
-    // Bring building polygons to front
-    state.map.eachLayer(layer => {
-        if (layer.buildingData) {
-            layer.bringToFront();
-        }
-    });
+    // Bring building polygons to front so they remain clickable
+    if (state.buildingLayerGroup) {
+        state.buildingLayerGroup.bringToFront();
+    }
 }
 
 /**
