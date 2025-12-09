@@ -592,29 +592,50 @@ async function createRegionalHeatmap() {
     });
     
     console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods with data`);
-    console.log('Sample neighborhoods:', Array.from(neighborhoodScores.keys()).slice(0, 5).join(', '));
+    
+    // Calculate score for each GeoJSON neighborhood by spatial aggregation
+    const geoJSONScores = new Map();
+    
+    neighborhoodsGeoJSON.features.forEach(feature => {
+        const buurtcode = feature.properties.Buurtcode;
+        const buurtnaam = feature.properties.Buurtnaam;
+        
+        // Find all buildings within this GeoJSON neighborhood's bounds
+        const bounds = L.geoJSON(feature).getBounds();
+        const buildingsInNeighborhood = [];
+        
+        state.buildingLayers.forEach(({ building }) => {
+            // Simple bounding box check
+            if (building.latitude >= bounds.getSouth() && 
+                building.latitude <= bounds.getNorth() &&
+                building.longitude >= bounds.getWest() && 
+                building.longitude <= bounds.getEast()) {
+                buildingsInNeighborhood.push(building);
+            }
+        });
+        
+        if (buildingsInNeighborhood.length > 0) {
+            const scores = buildingsInNeighborhood.map(calculateBuildingScore);
+            const meanScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            geoJSONScores.set(buurtcode, {
+                score: meanScore,
+                count: buildingsInNeighborhood.length,
+                name: buurtnaam
+            });
+        }
+    });
+    
+    console.log(`Matched ${geoJSONScores.size} GeoJSON neighborhoods with building data`);
     
     // Create neighborhood polygon layer
     state.regionalHeatmapLayer = L.geoJSON(neighborhoodsGeoJSON, {
         style: (feature) => {
-            // Try different property names for neighborhood
-            const neighborhoodName = feature.properties.Buurt || 
-                                     feature.properties.name || 
-                                     feature.properties.Buurt_naam ||
-                                     feature.properties.naam;
-            
-            // Debug: log first feature to see available properties
-            if (!state._loggedGeoJSONProperties) {
-                console.log('GeoJSON feature properties:', feature.properties);
-                state._loggedGeoJSONProperties = true;
-            }
-            
-            const data = neighborhoodScores.get(neighborhoodName);
+            const buurtcode = feature.properties.Buurtcode;
+            const data = geoJSONScores.get(buurtcode);
             
             if (data) {
                 // Has buildings - color by mean score
-                const meanScore = meanScores.get(neighborhoodName);
-                const color = getHeatColor(meanScore);
+                const color = getHeatColor(data.score);
                 
                 return {
                     fillColor: color,
@@ -634,26 +655,22 @@ async function createRegionalHeatmap() {
             }
         },
         onEachFeature: (feature, layer) => {
-            const neighborhoodName = feature.properties.Buurt || 
-                                     feature.properties.name || 
-                                     feature.properties.Buurt_naam ||
-                                     feature.properties.naam;
-            
-            const data = neighborhoodScores.get(neighborhoodName);
+            const buurtcode = feature.properties.Buurtcode;
+            const buurtnaam = feature.properties.Buurtnaam;
+            const data = geoJSONScores.get(buurtcode);
             
             if (data) {
-                const meanScore = meanScores.get(neighborhoodName);
                 layer.bindPopup(`
                     <div style="font-family: Courier New; padding: 10px;">
-                        <strong style="color: #FFD700; text-transform: uppercase;">${neighborhoodName}</strong><br>
-                        <span style="color: #666;">Mean Score:</span> <strong style="color: #FF8C00;">${meanScore.toFixed(3)}</strong><br>
+                        <strong style="color: #FFD700; text-transform: uppercase;">${buurtnaam}</strong><br>
+                        <span style="color: #666;">Mean Score:</span> <strong style="color: #FF8C00;">${data.score.toFixed(3)}</strong><br>
                         <span style="color: #666;">Buildings:</span> <strong style="color: #FF8C00;">${data.count}</strong>
                     </div>
                 `);
             } else {
                 layer.bindPopup(`
                     <div style="font-family: Courier New; padding: 10px;">
-                        <strong style="color: #999; text-transform: uppercase;">${neighborhoodName}</strong><br>
+                        <strong style="color: #999; text-transform: uppercase;">${buurtnaam}</strong><br>
                         <span style="color: #666;">No building data</span>
                     </div>
                 `);
