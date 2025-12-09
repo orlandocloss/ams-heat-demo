@@ -206,17 +206,19 @@ function createPixelText() {
 // ============================================================================
 
 /**
- * Load building data from Vercel API
+ * Load minimal building data from Vercel API
+ * Only loads essential data for rendering and heatmap calculation
  */
 async function loadBuildings() {
     const startTime = Date.now();
     createPixelText();
     
     try {
-        const response = await fetch('/api/buildings');
+        console.log('Loading minimal building data...');
+        const response = await fetch('/api/buildings-minimal');
         state.buildingsData = await response.json();
         
-        console.log(`Loaded ${state.buildingsData.length} buildings`);
+        console.log(`Loaded ${state.buildingsData.length} buildings (minimal data)`);
         addBuildingsToMap();
         
         const elapsed = Date.now() - startTime;
@@ -240,13 +242,13 @@ async function loadBuildings() {
 
 /**
  * Add buildings to map in batches for smooth performance
- * Uses Canvas renderer to handle 50K+ polygons efficiently
+ * Uses minimal data - full details loaded on-demand when clicked
  */
 function addBuildingsToMap() {
     let successCount = 0;
     let currentBatch = 0;
     
-    console.log(`Processing ${state.buildingsData.length} buildings in batches...`);
+    console.log(`Rendering ${state.buildingsData.length} buildings...`);
     
     // Process and render in batches to avoid blocking the UI
     function processBatch() {
@@ -259,9 +261,7 @@ function addBuildingsToMap() {
                 const geoJSON = wktToGeoJSON(building.polygon);
                 if (!geoJSON) continue;
                 
-                building.worstEnergyLabel = getWorstEnergyLabel(building.addresses);
-                building.oldestYear = getOldestYear(building.addresses);
-                building.onBusyRoad = isOnBusyRoad(building.addresses);
+                // Data already aggregated from API - no need to calculate
                 
                 const polygon = L.geoJSON(geoJSON, {
                     style: getDefaultBuildingStyle(),
@@ -300,8 +300,11 @@ function getDefaultBuildingStyle() {
     };
 }
 
+/**
+ * Setup building interactions (hover, click)
+ */
 function setupBuildingInteractions(layer, building) {
-    layer.bindTooltip(`${building.addresses.length} address(es) - Click for details`, {
+    layer.bindTooltip(`${building.addressCount} address(es) - Click for details`, {
         sticky: true
     });
     
@@ -311,6 +314,10 @@ function setupBuildingInteractions(layer, building) {
     
     layer.buildingData = building;
 }
+
+/**
+ * Handle building hover effects
+ */
 
 function handleBuildingHover(layer, isHovering) {
     if (state.currentHighlightedLayer === layer) return;
@@ -332,39 +339,18 @@ function handleBuildingHover(layer, isHovering) {
 }
 
 // ============================================================================
-// ENERGY & YEAR ANALYSIS
+// BUILDING METRICS
 // ============================================================================
 
-function getWorstEnergyLabel(addresses) {
-    let worstLabel = 'A++++';
-    let worstRank = 8;
-    
-    addresses.forEach(addr => {
-        const rank = CONFIG.ENERGY_RANKING[addr.energyLabel] ?? 0;
-        if (rank < worstRank) {
-            worstRank = rank;
-            worstLabel = addr.energyLabel;
-        }
-    });
-    
-    return { label: worstLabel, score: worstRank };
-}
-
-function getOldestYear(addresses) {
-    let oldest = Infinity;
-    
-    addresses.forEach(addr => {
-        const year = parseInt(addr.buildingYear);
-        if (!isNaN(year) && year < oldest) {
-            oldest = year;
-        }
-    });
-    
-    return oldest === Infinity ? 2000 : oldest;
-}
-
-function isOnBusyRoad(addresses) {
-    return addresses.some(addr => addr.busyRoad === true);
+/**
+ * Get energy label from rank score
+ */
+function getEnergyLabelFromRank(rank) {
+    const labels = {
+        8: 'A++++', 7: 'A+++', 6: 'A++', 5: 'A+', 4: 'A',
+        3: 'B', 2: 'C', 1: 'D', 0: 'E', '-1': 'F', '-2': 'G'
+    };
+    return labels[rank] || 'Unknown';
 }
 
 // ============================================================================
@@ -386,6 +372,9 @@ function applyHeatmap() {
     console.log(`Heatmap applied: Energy=${state.energyWeight}, Year=${state.yearWeight}, BusyRoad=${state.busyRoadWeight}`);
 }
 
+/**
+ * Calculate normalization ranges for heatmap scores
+ */
 function calculateNormalization() {
     state.normalization = {
         minYear: Infinity,
@@ -397,11 +386,14 @@ function calculateNormalization() {
     state.buildingsData.forEach(building => {
         state.normalization.minYear = Math.min(state.normalization.minYear, building.oldestYear);
         state.normalization.maxYear = Math.max(state.normalization.maxYear, building.oldestYear);
-        state.normalization.minEnergy = Math.min(state.normalization.minEnergy, building.worstEnergyLabel.score);
-        state.normalization.maxEnergy = Math.max(state.normalization.maxEnergy, building.worstEnergyLabel.score);
+        state.normalization.minEnergy = Math.min(state.normalization.minEnergy, building.worstEnergyRank);
+        state.normalization.maxEnergy = Math.max(state.normalization.maxEnergy, building.worstEnergyRank);
     });
 }
 
+/**
+ * Get heatmap style for a building based on weighted score
+ */
 function getHeatmapStyle(building) {
     const { minYear, maxYear, minEnergy, maxEnergy } = state.normalization;
     
@@ -409,9 +401,8 @@ function getHeatmapStyle(building) {
         1 - (building.oldestYear - minYear) / (maxYear - minYear) : 0.5;
     
     const energyScore = maxEnergy > minEnergy ?
-        1 - (building.worstEnergyLabel.score - minEnergy) / (maxEnergy - minEnergy) : 0.5;
+        1 - (building.worstEnergyRank - minEnergy) / (maxEnergy - minEnergy) : 0.5;
     
-    // Binary score: 1.0 if on busy road, 0.0 if not
     const busyRoadScore = building.onBusyRoad ? 1.0 : 0.0;
     
     const weightedScore = 
@@ -428,6 +419,10 @@ function getHeatmapStyle(building) {
         weight: 2
     };
 }
+
+/**
+ * Convert score (0-1) to heat color (yellow to red)
+ */
 
 function getHeatColor(score) {
     const r = 255;
@@ -451,9 +446,13 @@ function darkenColor(color, factor) {
 // BUILDING SELECTION
 // ============================================================================
 
-function selectBuilding(building, layer, latlng) {
+/**
+ * Select a building and load its full details
+ */
+async function selectBuilding(building, layer, latlng) {
     state.selectedBuilding = building;
     
+    // Reset previous highlight
     if (state.currentHighlightedLayer && state.currentHighlightedLayer !== layer) {
         const baseStyle = state.heatmapEnabled ? 
             getHeatmapStyle(state.currentHighlightedLayer.buildingData) : 
@@ -461,6 +460,7 @@ function selectBuilding(building, layer, latlng) {
         state.currentHighlightedLayer.setStyle(baseStyle);
     }
     
+    // Highlight selected building
     layer.setStyle({
         fillColor: '#0066ff',
         fillOpacity: 0.7,
@@ -469,12 +469,41 @@ function selectBuilding(building, layer, latlng) {
     });
     state.currentHighlightedLayer = layer;
     
+    // Center map on building
     state.map.setView(latlng, 18, { animate: true, duration: 0.5 });
     
+    // Show building view and load details
     showBuildingView();
-    showBuildingInfo(building);
+    await loadBuildingDetails(building);
 }
 
+/**
+ * Load full building details on demand
+ */
+async function loadBuildingDetails(building) {
+    const content = document.getElementById('building-content');
+    
+    // Show loading state
+    content.innerHTML = '<div style="color: #FFD700; text-align: center; padding: 40px;">Loading details...</div>';
+    
+    try {
+        const response = await fetch(`/api/building-details?polygon=${encodeURIComponent(building.polygon)}`);
+        const addresses = await response.json();
+        
+        // Update building with full address data
+        building.addresses = addresses;
+        
+        // Display the details
+        showBuildingInfo(building);
+    } catch (error) {
+        console.error('Error loading building details:', error);
+        content.innerHTML = '<div style="color: #CD5C5C; text-align: center; padding: 40px;">Error loading details</div>';
+    }
+}
+
+/**
+ * Display building information in side panel
+ */
 function showBuildingInfo(building) {
     const content = document.getElementById('building-content');
     
@@ -484,7 +513,8 @@ function showBuildingInfo(building) {
     html += `<div class="summary-stat"><strong>Addresses</strong><span>${building.addresses.length}</span></div>`;
     
     if (state.heatmapEnabled) {
-        html += `<div class="summary-stat"><strong>Worst Label</strong><span>${building.worstEnergyLabel.label}</span></div>`;
+        const worstLabel = getEnergyLabelFromRank(building.worstEnergyRank);
+        html += `<div class="summary-stat"><strong>Worst Label</strong><span>${worstLabel}</span></div>`;
         html += `<div class="summary-stat"><strong>Oldest</strong><span>${building.oldestYear}</span></div>`;
         html += `<div class="summary-stat"><strong>Busy Road</strong><span>${building.onBusyRoad ? 'Yes' : 'No'}</span></div>`;
     }
@@ -538,6 +568,9 @@ function toggleRegionalHeatmap(e) {
     }
 }
 
+/**
+ * Create regional heatmap showing mean scores by neighborhood
+ */
 async function createRegionalHeatmap() {
     if (!state.heatmapEnabled) {
         alert('Please apply building heatmap weights first');
@@ -560,9 +593,7 @@ async function createRegionalHeatmap() {
     const neighborhoodScores = new Map();
     
     state.buildingLayers.forEach(({ building }) => {
-        if (!building.addresses || building.addresses.length === 0) return;
-        
-        const neighborhood = building.addresses[0].neighborhood || 'Unknown';
+        const neighborhood = building.neighborhood || 'Unknown';
         const score = calculateBuildingScore(building);
         
         if (!neighborhoodScores.has(neighborhood)) {
@@ -623,6 +654,9 @@ async function createRegionalHeatmap() {
     });
 }
 
+/**
+ * Calculate weighted score for a building (used in regional heatmap)
+ */
 function calculateBuildingScore(building) {
     const { minYear, maxYear, minEnergy, maxEnergy } = state.normalization;
     
@@ -630,7 +664,7 @@ function calculateBuildingScore(building) {
         1 - (building.oldestYear - minYear) / (maxYear - minYear) : 0.5;
     
     const energyScore = maxEnergy > minEnergy ?
-        1 - (building.worstEnergyLabel.score - minEnergy) / (maxEnergy - minEnergy) : 0.5;
+        1 - (building.worstEnergyRank - minEnergy) / (maxEnergy - minEnergy) : 0.5;
     
     const busyRoadScore = building.onBusyRoad ? 1.0 : 0.0;
     
