@@ -642,12 +642,12 @@ async function createRegionalHeatmap() {
             const data = geoJSONScores.get(buurtcode);
             
             if (data) {
-                // Has buildings - color by mean score
+                // Has buildings - solid color by mean score (hides buildings)
                 const color = getHeatColor(data.score);
                 
                 return {
                     fillColor: color,
-                    fillOpacity: 0.6,
+                    fillOpacity: 1.0,  // Solid fill
                     color: '#333',
                     weight: 2
                 };
@@ -655,7 +655,7 @@ async function createRegionalHeatmap() {
                 // No buildings - light gray fill
                 return {
                     fillColor: '#e0e0e0',
-                    fillOpacity: 0.3,
+                    fillOpacity: 0.4,
                     color: '#999',
                     weight: 1
                 };
