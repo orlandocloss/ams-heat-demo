@@ -26,15 +26,36 @@ body {
 }
 
 .logo {
-    font-size: 48px;
-    font-weight: 700;
-    letter-spacing: 4px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     text-align: center;
-    background: linear-gradient(180deg, #FFD700 0%, #FF8C00 50%, #8B1A1A 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    display: flex;
+    justify-content: center;
+}
+
+.pixel {
+    width: 8px;
+    height: 8px;
+    background: #1a1a1a;
+    border-radius: 1px;
+}
+
+.pixel.active {
+    animation: pixelHeat 2s ease-in-out infinite;
+}
+
+@keyframes pixelHeat {
+    0% {
+        background-color: #FFD700;
+        box-shadow: 0 0 4px rgba(255, 215, 0, 0.6);
+    }
+    50% {
+        background-color: #FF8C00;
+        box-shadow: 0 0 6px rgba(255, 140, 0, 0.8);
+    }
+    100% {
+        background-color: #8B1A1A;
+        box-shadow: 0 0 4px rgba(139, 26, 26, 0.6);
+    }
 }
 
 .tagline {

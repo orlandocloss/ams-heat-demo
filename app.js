@@ -1,12 +1,17 @@
 /**
- * HEATMAP // AMSTERDAM
- * Interactive building heatmap visualization
+ * OPEN HEAT AMSTERDAM
+ * Interactive building heat readiness visualization
+ * 
+ * An open-source, open-data project by:
+ * - AMS Institute
+ * - Gemeente Amsterdam  
+ * - MADE Living Lab (WUR)
  * 
  * Features:
- * - Custom weighted heatmaps (energy, age, busy roads)
+ * - Binary filter system (energy, age, busy roads)
  * - Regional neighborhood analysis
  * - Interactive building details
- * - Pixel art retro UI
+ * - Address search
  */
 
 // ============================================================================
@@ -322,7 +327,7 @@ const PIXEL_PATTERNS = {
 
 function createPixelText() {
     const gridContainer = document.querySelector('.grid-text');
-    const lines = ["IT'S GETTING", "HOT IN HERE"];
+    const lines = ["OPEN HEAT", "AMSTERDAM"];
     const grid = [];
     let maxCols = 0;
     
