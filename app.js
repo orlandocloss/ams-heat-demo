@@ -126,44 +126,33 @@ function setupSearch() {
  * Perform address search and show results
  */
 async function performSearch(query, resultsContainer) {
-    const queryLower = query.toLowerCase();
-    
-    // Search in building data
-    const matches = [];
-    
-    state.buildingLayers.forEach(({ building, layer }) => {
-        // For buildings without full address data loaded yet, search in building ID
-        // We'll need to fetch minimal address info from the building
-        if (building.id && building.id.toLowerCase().includes(queryLower)) {
-            matches.push({ building, layer });
-        }
-    });
-    
-    // If no matches in IDs, do a server search
-    if (matches.length === 0) {
-        try {
-            const response = await fetch(`/api/search-addresses?q=${encodeURIComponent(query)}`);
-            const results = await response.json();
-            
-            // Match results to buildings
-            results.forEach(result => {
-                const buildingLayer = state.buildingLayers.find(({ building }) => 
-                    building.polygon === result.polygon
-                );
-                if (buildingLayer) {
-                    matches.push({
-                        ...buildingLayer,
-                        address: result.address,
-                        neighborhood: result.neighborhood
-                    });
-                }
-            });
-        } catch (error) {
-            console.error('Search error:', error);
-        }
+    try {
+        const response = await fetch(`/api/search-addresses?q=${encodeURIComponent(query)}`);
+        const results = await response.json();
+        
+        // Match results to building layers
+        const matches = [];
+        results.forEach(result => {
+            const buildingLayer = state.buildingLayers.find(({ building }) => 
+                building.polygon === result.polygon
+            );
+            if (buildingLayer) {
+                matches.push({
+                    ...buildingLayer,
+                    address: result.address,
+                    neighborhood: result.neighborhood,
+                    latitude: result.latitude,
+                    longitude: result.longitude
+                });
+            }
+        });
+        
+        displaySearchResults(matches.slice(0, 10), resultsContainer);
+    } catch (error) {
+        console.error('Search error:', error);
+        resultsContainer.innerHTML = '<div class="search-result-item" style="color: #CD5C5C;">Search failed</div>';
+        resultsContainer.classList.remove('hidden');
     }
-    
-    displaySearchResults(matches.slice(0, 10), resultsContainer);
 }
 
 /**
