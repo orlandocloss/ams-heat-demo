@@ -346,6 +346,14 @@ function applyHeatmap() {
     });
     
     console.log(`Heatmap applied: Energy=${state.energyWeight}, Year=${state.yearWeight}, BusyRoad=${state.busyRoadWeight}`);
+    
+    // Recalculate regional heatmap if it's currently visible
+    if (state.regionalHeatmapEnabled && state.regionalHeatmapLayer) {
+        console.log('Recalculating regional heatmap with new weights...');
+        state.map.removeLayer(state.regionalHeatmapLayer);
+        state.regionalHeatmapLayer = null;
+        createRegionalHeatmap();
+    }
 }
 
 /**
@@ -644,13 +652,12 @@ async function createRegionalHeatmap() {
                     weight: 2
                 };
             } else {
-                // No buildings - transparent
+                // No buildings - light gray fill
                 return {
-                    fillColor: 'none',
-                    fillOpacity: 0,
+                    fillColor: '#e0e0e0',
+                    fillOpacity: 0.3,
                     color: '#999',
-                    weight: 1,
-                    dashArray: '3, 3'
+                    weight: 1
                 };
             }
         },
