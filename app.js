@@ -22,12 +22,7 @@ const CONFIG = {
     DEFAULT_ZOOM: 13,
     MIN_ZOOM: 13,
     MAX_ZOOM: 20,
-    MIN_LOAD_TIME: 3000,
-    BATCH_SIZE: 500,
-    ENERGY_RANKING: {
-        'A++++': 8, 'A+++': 7, 'A++': 6, 'A+': 5, 'A': 4,
-        'B': 3, 'C': 2, 'D': 1, 'E': 0, 'F': -1, 'G': -2
-    }
+    MIN_LOAD_TIME: 3000
 };
 
 // ============================================================================
@@ -241,54 +236,35 @@ async function loadBuildings() {
 // ============================================================================
 
 /**
- * Add buildings to map in batches for smooth performance
- * Uses minimal data - full details loaded on-demand when clicked
+ * Add buildings to map
+ * Uses minimal pre-aggregated data - full details loaded on-demand when clicked
  */
 function addBuildingsToMap() {
-    let successCount = 0;
-    let currentBatch = 0;
-    
     console.log(`Rendering ${state.buildingsData.length} buildings...`);
     
-    // Process and render in batches to avoid blocking the UI
-    function processBatch() {
-        const start = currentBatch * CONFIG.BATCH_SIZE;
-        const end = Math.min(start + CONFIG.BATCH_SIZE, state.buildingsData.length);
-        
-        for (let i = start; i < end; i++) {
-            const building = state.buildingsData[i];
-            try {
-                const geoJSON = wktToGeoJSON(building.polygon);
-                if (!geoJSON) continue;
-                
-                // Data already aggregated from API - no need to calculate
-                
-                const polygon = L.geoJSON(geoJSON, {
-                    style: getDefaultBuildingStyle(),
-                    onEachFeature: (feature, layer) => {
-                        setupBuildingInteractions(layer, building);
-                    }
-                });
-                
-                polygon.addTo(state.buildingLayerGroup);
-                state.buildingLayers.push({ building, layer: polygon });
-                successCount++;
-            } catch (error) {
-                console.error('Error adding building:', error);
-            }
-        }
-        
-        currentBatch++;
-        
-        if (end < state.buildingsData.length) {
-            console.log(`Processed ${end}/${state.buildingsData.length}...`);
-            requestAnimationFrame(processBatch);
-        } else {
-            console.log(`✓ Rendered ${successCount} buildings`);
-        }
-    }
+    let successCount = 0;
     
-    processBatch();
+    state.buildingsData.forEach((building) => {
+        try {
+            const geoJSON = wktToGeoJSON(building.polygon);
+            if (!geoJSON) return;
+            
+            const polygon = L.geoJSON(geoJSON, {
+                style: getDefaultBuildingStyle(),
+                onEachFeature: (feature, layer) => {
+                    setupBuildingInteractions(layer, building);
+                }
+            });
+            
+            polygon.addTo(state.buildingLayerGroup);
+            state.buildingLayers.push({ building, layer: polygon });
+            successCount++;
+        } catch (error) {
+            console.error('Error adding building:', error);
+        }
+    });
+    
+    console.log(`✓ Rendered ${successCount} buildings`);
 }
 
 function getDefaultBuildingStyle() {
