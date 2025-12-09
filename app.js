@@ -685,12 +685,8 @@ async function createRegionalHeatmap() {
         }
     }).addTo(state.map);
     
-    // Bring building polygons to front so they remain clickable
-    state.buildingLayers.forEach(({ layer }) => {
-        if (layer && layer.bringToFront) {
-            layer.bringToFront();
-        }
-    });
+    // Regional layer should be on top - don't bring buildings to front
+    console.log('Regional heatmap layer added on top');
 }
 
 /**
