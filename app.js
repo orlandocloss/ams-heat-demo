@@ -68,7 +68,8 @@ function initMap() {
         minZoom: CONFIG.MIN_ZOOM,
         maxZoom: CONFIG.MAX_ZOOM,
         preferCanvas: true,
-        renderer: L.canvas({ tolerance: 5 })
+        renderer: L.canvas({ tolerance: 5 }),
+        zoomControl: false  // Hide zoom buttons
     }).setView(CONFIG.CENTER, CONFIG.DEFAULT_ZOOM);
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
