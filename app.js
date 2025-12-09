@@ -62,11 +62,13 @@ const state = {
 
 function initMap() {
     state.map = L.map('map', {
-        maxBounds: [AMSTERDAM_BOUNDS.southwest, AMSTERDAM_BOUNDS.northeast],
+        maxBounds: [CONFIG.BOUNDS.southwest, CONFIG.BOUNDS.northeast],
         maxBoundsViscosity: 1.0,
-        minZoom: 13,
-        maxZoom: 20
-    }).setView(AMSTERDAM_CENTER, DEFAULT_ZOOM);
+        minZoom: CONFIG.MIN_ZOOM,
+        maxZoom: CONFIG.MAX_ZOOM,
+        preferCanvas: true,
+        renderer: L.canvas({ tolerance: 5 })
+    }).setView(CONFIG.CENTER, CONFIG.DEFAULT_ZOOM);
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
