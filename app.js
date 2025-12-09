@@ -124,36 +124,60 @@ function setupSearch() {
 }
 
 /**
- * Perform address search and show results
+ * Perform fast client-side search using loaded building data
  */
 async function performSearch(query, resultsContainer) {
+    const queryLower = query.toLowerCase();
+    const matches = [];
+    
+    // Quick search through already loaded building data
+    state.buildingLayers.forEach(({ building, layer }) => {
+        // Search by neighborhood
+        if (building.neighborhood && building.neighborhood.toLowerCase().includes(queryLower)) {
+            matches.push({
+                building,
+                layer,
+                address: `${building.neighborhood} (${building.addressCount} addresses)`,
+                neighborhood: building.neighborhood,
+                latitude: building.latitude,
+                longitude: building.longitude,
+                score: 1  // Exact match
+            });
+        }
+    });
+    
+    // If we have enough matches, show them immediately
+    if (matches.length >= 10) {
+        displaySearchResults(matches.slice(0, 10), resultsContainer);
+        return;
+    }
+    
+    // Otherwise, do a server search for specific addresses
     try {
         const response = await fetch(`/api/search-addresses?q=${encodeURIComponent(query)}`);
         const results = await response.json();
         
-        // Match results to building layers
-        const matches = [];
+        // Match server results to building layers
         results.forEach(result => {
             const buildingLayer = state.buildingLayers.find(({ building }) => 
                 building.polygon === result.polygon
             );
-            if (buildingLayer) {
+            if (buildingLayer && !matches.find(m => m.building === buildingLayer.building)) {
                 matches.push({
                     ...buildingLayer,
                     address: result.address,
                     neighborhood: result.neighborhood,
                     latitude: result.latitude,
-                    longitude: result.longitude
+                    longitude: result.longitude,
+                    score: 2  // Server match
                 });
             }
         });
-        
-        displaySearchResults(matches.slice(0, 10), resultsContainer);
     } catch (error) {
         console.error('Search error:', error);
-        resultsContainer.innerHTML = '<div class="search-result-item" style="color: #CD5C5C;">Search failed</div>';
-        resultsContainer.classList.remove('hidden');
     }
+    
+    displaySearchResults(matches.slice(0, 10), resultsContainer);
 }
 
 /**
