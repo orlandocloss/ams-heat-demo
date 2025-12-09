@@ -446,8 +446,9 @@ function handleBuildingHover(layer, isHovering) {
         });
         layer.bringToFront();
     } else {
-        const baseStyle = state.heatmapEnabled ? 
-            getHeatmapStyle(layer.buildingData) : 
+        const building = layer.buildingData;
+        const baseStyle = (state.heatmapEnabled && building) ? 
+            getHeatmapStyle(building) : 
             getDefaultBuildingStyle();
         layer.setStyle(baseStyle);
     }
@@ -577,8 +578,9 @@ async function selectBuilding(building, layer, latlng) {
     
     // Reset previous highlight
     if (state.currentHighlightedLayer && state.currentHighlightedLayer !== layer) {
-        const baseStyle = state.heatmapEnabled ? 
-            getHeatmapStyle(state.currentHighlightedLayer.buildingData) : 
+        const previousBuilding = state.currentHighlightedLayer.buildingData;
+        const baseStyle = (state.heatmapEnabled && previousBuilding) ? 
+            getHeatmapStyle(previousBuilding) : 
             getDefaultBuildingStyle();
         state.currentHighlightedLayer.setStyle(baseStyle);
     }
