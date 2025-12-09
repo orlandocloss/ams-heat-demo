@@ -2,7 +2,7 @@
 
 Open-source project mapping building heat readiness in Amsterdam.
 
-**Live Site:** https://open-heat-amsterdam.vercel.app
+**Live:** https://open-heat-amsterdam.vercel.app
 
 ## About
 
