@@ -296,7 +296,7 @@ function setupPanel() {
 function showHeatmapView() {
     document.getElementById('heatmap-view').classList.remove('hidden');
     document.getElementById('building-view').classList.add('hidden');
-    document.getElementById('panel-title').textContent = 'Configuration';
+    document.getElementById('panel-title').textContent = 'Open Heat Amsterdam';
     document.getElementById('back-to-heatmap').classList.add('hidden');
 }
 
