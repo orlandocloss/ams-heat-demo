@@ -592,9 +592,7 @@ async function createRegionalHeatmap() {
     });
     
     console.log(`\nRegional heatmap: ${neighborhoodScores.size} neighborhoods with data`);
-    
-    // Log available neighborhood names for debugging
-    console.log('Neighborhoods in data:', Array.from(neighborhoodScores.keys()).slice(0, 10).join(', '));
+    console.log('Sample neighborhoods:', Array.from(neighborhoodScores.keys()).slice(0, 5).join(', '));
     
     // Create neighborhood polygon layer
     state.regionalHeatmapLayer = L.geoJSON(neighborhoodsGeoJSON, {
@@ -604,6 +602,12 @@ async function createRegionalHeatmap() {
                                      feature.properties.name || 
                                      feature.properties.Buurt_naam ||
                                      feature.properties.naam;
+            
+            // Debug: log first feature to see available properties
+            if (!state._loggedGeoJSONProperties) {
+                console.log('GeoJSON feature properties:', feature.properties);
+                state._loggedGeoJSONProperties = true;
+            }
             
             const data = neighborhoodScores.get(neighborhoodName);
             
@@ -658,9 +662,11 @@ async function createRegionalHeatmap() {
     }).addTo(state.map);
     
     // Bring building polygons to front so they remain clickable
-    if (state.buildingLayerGroup) {
-        state.buildingLayerGroup.bringToFront();
-    }
+    state.buildingLayers.forEach(({ layer }) => {
+        if (layer && layer.bringToFront) {
+            layer.bringToFront();
+        }
+    });
 }
 
 /**
