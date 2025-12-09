@@ -26,10 +26,11 @@ body {
 }
 
 .logo {
-    margin-bottom: 30px;
+    margin-bottom: 50px;
     text-align: center;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 .pixel {
@@ -40,31 +41,10 @@ body {
 }
 
 .pixel.active {
-    animation: pixelHeat 2s ease-in-out infinite;
+    background-color: #8B1A1A;
+    box-shadow: 0 0 4px rgba(139, 26, 26, 0.6);
 }
 
-@keyframes pixelHeat {
-    0% {
-        background-color: #FFD700;
-        box-shadow: 0 0 4px rgba(255, 215, 0, 0.6);
-    }
-    50% {
-        background-color: #FF8C00;
-        box-shadow: 0 0 6px rgba(255, 140, 0, 0.8);
-    }
-    100% {
-        background-color: #8B1A1A;
-        box-shadow: 0 0 4px rgba(139, 26, 26, 0.6);
-    }
-}
-
-.tagline {
-    text-align: center;
-    font-size: 12px;
-    color: #FF8C00;
-    letter-spacing: 3px;
-    margin-bottom: 60px;
-}
 
 .section {
     background: #1a1a1a;
